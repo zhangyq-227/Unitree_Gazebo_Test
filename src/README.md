@@ -1,6 +1,4 @@
 # Introduction
-> **Please note: Before running this project, download the CPU version of libtorch 2.0 to the src/unitree_controller/lib directory. When customizing the neural network, please update the directory path accordingly.**
-
 Here are the ROS simulation packages for Unitree robots, You can load robots and joint controllers in Gazebo, so you can perform low-level control (control the torque, position and angular velocity) of the robot joints. Please be aware that the Gazebo simulation cannot do high-level control, namely walking. Aside from these simulation functions, you can also control your real robots in ROS with the [unitree_ros_to_real](https://github.com/unitreerobotics/unitree_ros_to_real) packages. For real robots, you can do high-level and low-level control using our ROS packages.
 
 ## Packages:
