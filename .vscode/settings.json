@@ -25,6 +25,10 @@
         "random": "cpp",
         "*.ipp": "cpp",
         "hash_map": "cpp",
-        "hash_set": "cpp"
+        "hash_set": "cpp",
+        "eigen": "cpp",
+        "array": "cpp",
+        "string_view": "cpp",
+        "memory_resource": "cpp"
     }
 }

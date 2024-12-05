@@ -3,7 +3,7 @@
     <arg name="rname" default="go1"/>
     <arg name="robot_path" value="(find $(arg rname)_description)"/>
     <arg name="dollar" value="$"/>
-    <arg name="map" value="flat"/>
+    <arg name="map" value="cit"/>
 
     <arg name="paused" default="true"/>
     <arg name="use_sim_time" default="true"/>

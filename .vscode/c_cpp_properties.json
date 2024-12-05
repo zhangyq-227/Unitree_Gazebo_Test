@@ -10,6 +10,7 @@
         "/home/zhangyq227/code/gazebo_sim2sim/devel/include/**",
         "/home/zhangyq227/code/gazebo_sim2sim/src/unitree_controller/include/**",
         "/home/zhangyq227/code/gazebo_sim2sim/src/unitree_legged_control/include/**",
+        "/home/zhangyq227/code/gazebo_sim2sim/src/unitree_legged_control/lib/onnx/include/**",
         "/home/zhangyq227/code/gazebo_sim2sim/src/unitree_ros_to_real/unitree_legged_real/include/**",
         "/home/zhangyq227/code/gazebo_sim2sim/src/unitree_ros_to_real/unitree_legged_sdk/include/**",
         "/usr/include/**"

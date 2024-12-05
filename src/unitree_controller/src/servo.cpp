@@ -20,7 +20,7 @@ Use of this source code is governed by the MPL-2.0 license, see LICENSE.
 #include <math.h>
 #include <nav_msgs/Odometry.h>
 #include "body.h"
-#include "torch/script.h"
+#include "onnxruntime_cxx_api.h"
 #include <geometry_msgs/Twist.h>
 #include "Eigen/Eigen"
 
@@ -338,17 +338,29 @@ int main(int argc, char **argv)
     prop_pub = n.advertise<std_msgs::Float64MultiArray>("/prop_obs", 1);
     commands.setZero();
     last_actions.setZero();
+
+    auto memory_info = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
     default_position <<-0.1, 0.8, -1.5, 0.1, 0.8, -1.5, -0.1, 1.0, -1.5, 0.1, 1.0, -1.5;
-    torch::jit::script::Module network_;
-    torch::jit::script::Module walk_network_;
-    try{
-        network_ = torch::jit::load("/home/zhangyq227/code/gazebo_sim2sim/models/Actor_Deploy.pt");
-        walk_network_ = torch::jit::load("/home/zhangyq227/code/gazebo_sim2sim/models/walk.pt");
-    }
-    catch(const c10::Error& e)
-    {
-        std::cerr << "Erro when loading neral network!"<<e.what()<<std::endl;
-    }
+    Ort::Env env;
+    const char * model_path = "/home/zhangyq227/code/gazebo_sim2sim/models/policy.onnx";
+    Ort::Session session_{env,model_path, Ort::SessionOptions{nullptr}};
+    Ort::Value input_tensor_{nullptr};
+    std::array<int64_t, 2> input_shape_{1, 45 * 6};
+     
+    Ort::Value output_tensor_{nullptr};
+    std::array<int64_t, 2> output_shape_{1, 12};
+
+    std::array<float, 45*6> input_history_obs;
+    std::array<float, 12> output_actions;
+
+    input_tensor_ = Ort::Value::CreateTensor<float>(memory_info, input_history_obs.data(), input_history_obs.size(),
+                                                input_shape_.data(), input_shape_.size());
+    output_tensor_ = Ort::Value::CreateTensor<float>(memory_info, output_actions.data(), output_actions.size(),
+                                                     output_shape_.data(), output_shape_.size());
+    const char* input_names[] = {"example_x"}; 
+    const char* output_names[] = {"output"} ;
+
+    Ort::RunOptions run_options;
 
     motion_init();
     ros::Rate loop_rate(50);
@@ -440,27 +452,17 @@ int main(int argc, char **argv)
         //             lowCmd.motorCmd[i].q = output[i];
         //     // }
         //     // else{ 
-                torch::Tensor input_tensor =
-                    torch::from_blob(obs_buffer.data(), {1, obs_buffer.rows()}, at::kDouble)
-                    .clone();
 
-                // convert torch double tensor to torchscript float IValue
-                std::vector<torch::jit::IValue> input_ivalue;
-                input_ivalue.push_back(input_tensor.to(torch::kFloat));
+                // compute using ONNXRUNTIME
+                for(int i = 0;i < 45*6;i++)
+                    input_history_obs[i] = obs_buffer[i];
+                session_.Run(run_options,input_names, &input_tensor_,1,output_names,&output_tensor_, 1);
 
-                torch::Tensor output_tensor;
-                output_tensor = walk_network_(input_ivalue).toTensor();
-
-                // output actions
-                Vector12d output(output_tensor.to(torch::kDouble).data_ptr<double>());
-
-                last_actions = output;
-                output *= 0.25;
-                 
-                output = output + default_position;
                 for(int i = 0;i < 12;i++)
-                    lowCmd.motorCmd[i].q = output[i];
-
+                    last_actions[i] = output_actions[i];
+                 
+                for(int i = 0;i < 12;i++)
+                    lowCmd.motorCmd[i].q = 0.25*output_actions[i]+default_position[i];
         //     // }
         // }
         // else{

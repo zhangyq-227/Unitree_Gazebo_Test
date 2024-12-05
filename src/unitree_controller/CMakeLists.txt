@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.13)
 project(unitree_controller)
 
 # add_compile_options(-std=c++14)
 
-set(CMAKE_CXX_FLAGS "-O3 -fPIC -std=c++14")
+set(CMAKE_CXX_FLAGS "-O3 -fPIC -std=c++17")
 
 find_package(catkin REQUIRED COMPONENTS
     controller_manager
@@ -24,19 +24,18 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
     CATKIN_DEPENDS 
     unitree_legged_msgs 
-    DEPENDS Torch
 )
 
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib/libtorch)
-find_package(Torch REQUIRED)
+set(ONNX_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/onnx)
 
 include_directories(
     include
     ${Boost_INCLUDE_DIR}
     ${catkin_INCLUDE_DIRS}
     ${GAZEBO_INCLUDE_DIRS}
-    ${TORCH_INCLUDE_DIRS}
+    ${ONNX_ROOT_DIR}/include
 )
+
 
 link_directories(${GAZEBO_LIBRARY_DIRS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
@@ -46,10 +45,10 @@ add_library(${PROJECT_NAME}
     src/body.cpp 
 )
 
-add_dependencies(${PROJECT_NAME} unitree_legged_msgs_gencpp -pthread)
+add_dependencies(${PROJECT_NAME} unitree_legged_msgs_gencpp)
 
 target_link_libraries(${PROJECT_NAME}
-  ${catkin_LIBRARIES} ${EXTRA_LIBS}
+  ${catkin_LIBRARIES} ${EXTRA_LIBS} pthread
 )
 
 # add_library(unitreeFootContactPlugin SHARED plugin/foot_contact_plugin.cc)
@@ -62,7 +61,8 @@ add_executable(unitree_external_force src/external_force.cpp)
 target_link_libraries(unitree_external_force ${catkin_LIBRARIES})
 
 add_executable(unitree_servo src/servo.cpp)
-target_link_libraries(unitree_servo PUBLIC ${PROJECT_NAME} ${catkin_LIBRARIES} ${TORCH_LIBRARIES})
+target_link_directories(unitree_servo PRIVATE "${ONNX_ROOT_DIR}/lib")
+target_link_libraries(unitree_servo ${PROJECT_NAME} ${catkin_LIBRARIES} onnxruntime)
 
 add_executable(unitree_move_kinetic src/move_publisher.cpp)
 target_link_libraries(unitree_move_kinetic ${catkin_LIBRARIES} ${EXTRA_LIBS})

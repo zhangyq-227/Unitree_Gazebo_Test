@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 			return 0;
 
 		case 'w':
-			twist.linear.x = 0.8;
+			twist.linear.x = 1.0;
 			printf("move forward!\n");
 			break;
 
